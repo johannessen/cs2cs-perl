@@ -25,3 +25,15 @@ There is no schedule for further development.**
 [`cs2cs`]: https://proj.org/apps/cs2cs.html
 [PROJ]: https://proj.org/
 [Geo::Proj4]: https://metacpan.org/pod/Geo::Proj4
+
+
+Installation
+------------
+
+To install a development version from this repository, run the following steps:
+
+ 1. `git clone https://github.com/johannessen/cs2cs-perl && cd cs2cs-perl`
+ 1. `dzil build` (requires [Dist::Zilla][])
+ 1. `cpanm <archive>.tar.gz`
+
+[Dist::Zilla]: https://metacpan.org/release/Dist-Zilla

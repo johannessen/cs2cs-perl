@@ -1,10 +1,198 @@
-=head1 NAME
+use 5.014;
+use strict;
+use warnings;
 
-Geo::Proj5::cs2cs - Perl IPC interface to PROJ cs2cs
+package Geo::Proj5::cs2cs;
+# ABSTRACT: Perl IPC interface to PROJ cs2cs
 
-=head1 VERSION
 
-version 0.01
+use Carp qw(croak);
+use File::Basename qw(basename);
+use File::Spec;
+use Scalar::Util 1.10 qw(looks_like_number);
+
+use IPC::Run3 qw(run3);
+
+
+our $CMD = 'cs2cs';
+our @PATH = ();
+eval {
+	require # optional module; try to hide from static analysers
+		Alien::proj;
+	unshift @PATH, File::Spec->catdir(Alien::proj->dist_dir, 'bin');
+};
+
+# default stringification formats for cs2cs stdin and stdout
+# (%a is available since C++11; if PROJ's strtod() is too
+# old to understand it, try replacing it with %.15g)
+our $FORMAT_IN  = '%a';
+our $FORMAT_OUT = '%.12g';
+
+our %PARAMS = (
+	-f => $FORMAT_OUT,
+);
+
+
+sub new {
+	my $class = shift;
+	
+	my ($source_crs, $target_crs, $user_params);
+	if ( ref($_[0]) eq 'HASH' ) {
+		($user_params, $source_crs, $target_crs) = @_;
+	}
+	else {
+		($source_crs, $target_crs, $user_params) = @_;
+	}
+	
+	my $self = bless {}, $class;
+	
+	my $params = { %PARAMS, defined $user_params ? %$user_params : () };
+	$self->_special_params($params);
+	$self->{format_in} = $FORMAT_IN;
+	
+	# assemble cs2cs call line
+	for my $key (keys %$params) {
+		delete $params->{$key} unless defined $params->{$key};
+	}
+	$self->{cmd} = $self->_cmd();
+	$self->{call} = [$self->{cmd}, %$params, $source_crs, '+to', $target_crs, '-'];
+	
+	return $self;
+}
+
+
+sub _special_params {
+	my (undef, $params) = @_;
+	
+	# support -d even for older cs2cs versions
+	if (defined $params->{-d} && defined $params->{-f}) {
+		$params->{-f} = '%.' . (0 + $params->{-d}) . 'f';
+		delete $params->{-d};
+	}
+	
+	croak "-E is unsupported" if defined $params->{'-E'};
+	croak "-t is unsupported" if defined $params->{'-t'};
+	croak "-v is unsupported" if defined $params->{'-v'};
+	
+	# -w3 must be supplied as a single parameter to cs2cs
+	if (defined $params->{-w}) {
+		$params->{"-w$params->{-w}"} = '';
+		delete $params->{-w};
+	}
+	if (defined $params->{-W}) {
+		$params->{"-W$params->{-W}"} = '';
+		delete $params->{-W};
+	}
+	
+	delete $params->{XS};
+}
+
+
+sub _cmd {
+	# try to find the cs2cs binary
+	foreach my $path (@PATH) {
+		if (defined $path) {
+			my $cmd = File::Spec->catfile($path, $CMD);
+			return $cmd if -e $cmd;
+		}
+		else {
+			# when the @PATH element is undefined, try the env PATH
+			eval { run3 [$CMD, '-lp'], \undef, \undef, \undef };
+			return $CMD if ! $@ && $? == 0;
+		}
+	}
+	
+	# no luck; let's just hope it'll be on the PATH somewhere
+	return $CMD;
+}
+
+
+sub _ipc_error_check {
+	my ($self, $eval_err, $os_err, $code, $stderr) = @_;
+	
+	my $cmd = $CMD;
+	if (ref $self) {
+		$self->{stderr} = $stderr;
+		$self->{status} = $code >> 8;
+	}
+	
+	$stderr =~ s/^(.*\S)\s*\z/: $1/s if length $stderr;
+	croak "`$cmd` failed to execute: $os_err" if $code == -1;
+	croak "`$cmd` died with signal " . ($code & 0x7f) . $stderr if $code & 0x7f;
+	croak "`$cmd` exited with status " . ($code >> 8) . $stderr if $code;
+	croak $eval_err =~ s/\s+\z//r if $eval_err;
+}
+
+
+sub _format {
+	my ($self, $value) = @_;
+	
+	return sprintf $self->{format_in}, $value if looks_like_number $value;
+	return $value;
+}
+
+
+sub transform {
+	my ($self, @source_points) = @_;
+	
+	my @in = ();
+	foreach my $i (0 .. $#source_points) {
+		my $p = $source_points[$i];
+		push @in,   $self->_format($p->[0] || 0) . " "
+		          . $self->_format($p->[1] || 0) . " "
+		          . $self->_format($p->[2] || 0) . " $i";
+	}
+	my $in = join "\n", @in;
+	
+	my @out = ();
+	my $err = '';
+	eval {
+		local $/ = "\n";
+		run3 $self->{call}, \$in, \@out, \$err;
+	};
+	$self->_ipc_error_check($@, $!, $?, $err);
+	
+	my @target_points = ();
+	foreach my $line (@out) {
+		next unless $line =~ m{\s(\d+)\s*$}xa;
+		my $aux = $source_points[$1]->[3];
+		next unless $line =~ m{^\s* (\S+) \s+ (\S+) \s+ (\S+) \s}xa;
+		my @p = defined $aux ? ($1, $2, $3, $aux) : ($1, $2, $3);
+		
+		foreach my $j (0..2) {
+			$p[$j] = 0 + $p[$j] if looks_like_number $p[$j];
+		}
+		
+		push @target_points, \@p;
+	}
+	
+	if ( (my $s = @source_points) != (my $t = @target_points) ) {
+		croak "Source/target point count doesn't match ($s/$t): Assertion failed";
+	}
+	
+	return @target_points if wantarray;
+	return $target_points[0] if @target_points < 2;
+	croak "transform() with list argument prohibited in scalar context";
+}
+
+
+sub version {
+	my ($self) = @_;
+	
+	my $out = '';
+	eval {
+		run3 [ $self->_cmd ], \undef, \$out, \$out;
+	};
+	$self->_ipc_error_check($@, $!, $?, '');
+	
+	return $1 if $out =~ m/\b(\d+\.\d+(?:\.\d\w*)?)\b/;
+	return $out;
+}
+
+
+1;
+
+__END__
 
 =head1 SYNOPSIS
 
@@ -232,17 +420,5 @@ remain unaffected by such efforts.
 =head1 SEE ALSO
 
 L<Alien::proj>
-
-=head1 AUTHOR
-
-Arne Johannessen <ajnn@cpan.org>
-
-=head1 COPYRIGHT AND LICENSE
-
-This software is Copyright (c) 2020 by Arne Johannessen.
-
-This is free software, licensed under:
-
- The Artistic License 2.0 (GPL Compatible)
 
 =cut
