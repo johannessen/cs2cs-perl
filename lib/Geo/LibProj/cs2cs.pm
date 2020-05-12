@@ -2,7 +2,7 @@ use 5.014;
 use strict;
 use warnings;
 
-package Geo::Proj5::cs2cs;
+package Geo::LibProj::cs2cs;
 # ABSTRACT: Perl IPC interface to PROJ cs2cs
 
 
@@ -194,9 +194,9 @@ __END__
 
 =head1 SYNOPSIS
 
- use Geo::Proj5::cs2cs;
+ use Geo::LibProj::cs2cs;
  
- $cs2cs = Geo::Proj5::cs2cs->new("EPSG:25833" => "EPSG:4326");
+ $cs2cs = Geo::LibProj::cs2cs->new("EPSG:25833" => "EPSG:4326");
  $point = $cs2cs->transform( [500_000, 6094_800] );  # UTM 33U
  # result geographic lat, lon: [55.0, 15.0]
  
@@ -204,14 +204,14 @@ __END__
  @points_geo = $cs2cs->transform( @points_geo );
  
  $params = {-r => 1};  # control parameter -r: reverse input coords
- $cs2cs = Geo::Proj5::cs2cs->new("EPSG:4326" => "EPSG:25833", $params);
+ $cs2cs = Geo::LibProj::cs2cs->new("EPSG:4326" => "EPSG:25833", $params);
  $point = $cs2cs->transform( [q(15d4'28"E), q(54d59'30"N)] );
  # result easting, northing: [504763.08827, 6093866.63099]
  
  # old PROJ string syntax
  $source_crs = '+init=epsg:4326';
  $target_crs = '+proj=merc +lon_0=110';
- $cs2cs = Geo::Proj5::cs2cs->new($source_crs => $target_crs);
+ $cs2cs = Geo::LibProj::cs2cs->new($source_crs => $target_crs);
  ...
 
 =head1 DESCRIPTION
@@ -239,15 +239,15 @@ There is no schedule for further development.
 
 =head1 METHODS
 
-L<Geo::Proj5::cs2cs> implements the following methods.
+L<Geo::LibProj::cs2cs> implements the following methods.
 
 =head2 new
 
- $cs2cs = Geo::Proj5::cs2cs->new($source_crs => $target_crs);
+ $cs2cs = Geo::LibProj::cs2cs->new($source_crs => $target_crs);
 
-Construct a new L<Geo::Proj5::cs2cs> object that can transform points
-from the specified source CRS to the target CRS (coordinate reference
-system).
+Construct a new L<Geo::LibProj::cs2cs> object that can transform
+points from the specified source CRS to the target CRS (coordinate
+reference system).
 
 Each CRS may be specified using any method the PROJ version installed
 on your system supports for the C<cs2cs> utility. The legacy "PROJ
@@ -255,7 +255,7 @@ string" format is currently supported on all PROJ versions:
 
  $source_crs = '+init=epsg:4326';
  $target_crs = '+proj=merc +lon_0=110';
- $cs2cs = Geo::Proj5::cs2cs->new($source_crs => $target_crs);
+ $cs2cs = Geo::LibProj::cs2cs->new($source_crs => $target_crs);
 
 S<PROJ 6> and newer support additional formats to express a CRS,
 such as a WKT string or an AUTHORITY:CODE. Note that the axis order
@@ -266,8 +266,8 @@ details.
 Control parameters may optionally be supplied to C<cs2cs> in a
 hash ref using one of the following forms:
 
- $cs2cs = Geo::Proj5::cs2cs->new(\%params, $source_crs => $target_crs);
- $cs2cs = Geo::Proj5::cs2cs->new($source_crs => $target_crs, \%params);
+ $cs2cs = Geo::LibProj::cs2cs->new(\%params, $source_crs => $target_crs);
+ $cs2cs = Geo::LibProj::cs2cs->new($source_crs => $target_crs, \%params);
 
 Each of the C<%params> hash's keys represents a single control
 parameter. Parameters are supplied exactly like in a C<cs2cs>
@@ -299,7 +299,7 @@ point or points. At least two coordinates (x/y) are required, a third
 
 Additionally, auxiliary data may be included in a fourth array
 element. Just like C<cs2cs>, this value is simply passed through from
-the input point to the output point. L<Geo::Proj5::cs2cs> doesn't
+the input point to the output point. L<Geo::LibProj::cs2cs> doesn't
 stringify this value for C<cs2cs>, so you can safely use Perl
 references as auxiliary data, even blessed ones.
 
@@ -313,13 +313,13 @@ of multiple input points, calling in scalar context is prohibited.
 
 =head2 version
 
- $version = Geo::Proj5::cs2cs->version;
+ $version = Geo::LibProj::cs2cs->version;
 
 Attempt to determine the version of PROJ installed on your system.
 
 =head1 CONTROL PARAMETERS
 
-L<Geo::Proj5::cs2cs> implements special handling for the following
+L<Geo::LibProj::cs2cs> implements special handling for the following
 control parameters. Parameters not mentioned here are passed on to
 C<cs2cs> as-is. See your PROJ version's
 L<cs2cs(1)|https://proj.org/apps/cs2cs.html> documentation for a
@@ -327,19 +327,19 @@ full list of supported options.
 
 =head2 -d
 
- Geo::Proj5::cs2cs->new({-d => 7}, ...);
+ Geo::LibProj::cs2cs->new({-d => 7}, ...);
 
 Fully supported shorthand to C<-f %f>. Specifies the number of
 decimals in the output.
 
 =head2 -f
 
- Geo::Proj5::cs2cs->new({-f => '%.7f'}, ...);
+ Geo::LibProj::cs2cs->new({-f => '%.7f'}, ...);
 
 Fully supported (albeit with the limitations inherent in C<cs2cs>).
 Specifies a printf format string to control the output values.
 
-For L<Geo::Proj5::cs2cs>, the default value is currently C<'%.12g'>,
+For L<Geo::LibProj::cs2cs>, the default value is currently C<'%.12g'>,
 which allows easy further processing with Perl while keeping loss of
 floating point precision low enough for any cartographic use case.
 To enable the C<cs2cs> DMS string format (C<54d59'30.43"N>), you
@@ -348,18 +348,18 @@ will make C<cs2cs> use its built-in default format.
 
 =head2 Unsupported parameters
 
- Geo::Proj5::cs2cs->new({-E => '' }, ...);  # fails
- Geo::Proj5::cs2cs->new({-t => '#'}, ...);  # fails
- Geo::Proj5::cs2cs->new({-v => '' }, ...);  # fails
+ Geo::LibProj::cs2cs->new({-E => '' }, ...);  # fails
+ Geo::LibProj::cs2cs->new({-t => '#'}, ...);  # fails
+ Geo::LibProj::cs2cs->new({-v => '' }, ...);  # fails
 
 The C<-E>, C<-t>, and C<-v> parameters disrupt parsing of the
 transformation result and are unsupported.
 
 =head2 XS
 
- Geo::Proj5::cs2cs->new({XS => 0}, ...);
+ Geo::LibProj::cs2cs->new({XS => 0}, ...);
 
-There is a small chance that future versions of L<Geo::Proj5::cs2cs>
+There is a small chance that future versions of L<Geo::LibProj::cs2cs>
 might automatically switch to an XS implementation if a suitable
 third-party module is installed (such as L<Geo::Proj4>). This might
 improve speed dramatically, but it might also change some of the
@@ -374,7 +374,7 @@ However, if L<Alien::proj> is available, its C<share> install will
 be preferred.
 
 If this doesn't suit you, can control the selection of the C<cs2cs>
-binary by modifying the value of C<@Geo::Proj5::cs2cs::PATH>. The
+binary by modifying the value of C<@Geo::LibProj::cs2cs::PATH>. The
 directories listed will be tried in order, and the first match will
 be used. An explicit value of C<undef> in the list will cause the
 environment's C<PATH> to be used at that position in the search.
@@ -389,7 +389,7 @@ the result coordinates. The error string can be controlled
 by the S<C<-e> parameter> as described in the
 L<cs2cs(1)|https://proj.org/apps/cs2cs.html> documentation.
 
-L<Geo::Proj5::cs2cs> dies as soon as any other error condition is
+L<Geo::LibProj::cs2cs> dies as soon as any other error condition is
 discovered. Use C<eval>, L<Try::Tiny> or similar to catch this.
 
 =head1 BUGS
@@ -399,21 +399,9 @@ Instead of directly interacting with the C<cs2cs> process, temp
 files are created for every call to C<transform()>. This is probably
 reliable, but slow.
 
-It would make sense for this module to live in the C<Geo::PROJ>
-namespace (perhaps as C<Geo::PROJ::cs2cs>). However, that namespace
-collides with the unrelated C<Geo::Proj> module on case-insensitive
-file systems. Using the C<Geo::Proj5> namespace doesn't really make
-sense because this module is not limited to any particular PROJ
-version.
+The C<-l...> list parameters have not yet been implemented.
 
-That said, the C<Geo::Proj5> namespace does imply compatibility
-with PROJ versions more modern than S<version 4>. As an alternative,
-the name C<Geo::LibProj::cs2cs> was considered and even deemed more
-suitable in the abstract, but it might have a greater risk of
-conflicting with future efforts to improve PROJ support in Perl.
-With S<PROJ 5> having for the most part just been a transitional
-version, the C<Geo::Proj5> namespace may reasonably be expected to
-remain unaffected by such efforts.
+Please report new issues on GitHub.
 
 =head1 SEE ALSO
 

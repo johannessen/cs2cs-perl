@@ -1,5 +1,5 @@
-Geo::Proj5::cs2cs
-=================
+Geo::LibProj::cs2cs
+===================
 
 This distribution is a Perl [interprocess communication][]
 interface to the [`cs2cs`][] utility, which is a part of the

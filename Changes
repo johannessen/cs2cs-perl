@@ -1,5 +1,11 @@
-Revision history for Geo::Proj5::cs2cs
+Revision history for Geo::LibProj::cs2cs
+
+0.02  2020-05-13
+
+ - Change package name to Geo::LibProj::cs2cs to better reflect
+   the generic nature of this package
+ - Use '%.15g' as default format for cs2cs stdin formatting
 
 0.01  2020-05-12
 
- - Initial implementation
+ - Initial implementation of Geo::Proj5::cs2cs
