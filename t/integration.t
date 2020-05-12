@@ -17,7 +17,7 @@ BEGIN {
 }
 
 
-use Test::More 0.96 tests => 5 + 1;
+use Test::More 0.96 tests => 6 + 1;
 use Test::Exception;
 use Test::Warnings;
 
@@ -99,6 +99,23 @@ subtest 'child failure stderr' => sub {
 		$c->transform( [undef, undef] );
 	} qr/\binvalid\b/i, 'invalid option';
 	ok $c->{stderr}, 'stderr';
+};
+
+
+subtest 'problematic floats' => sub {
+	plan tests => 3;
+	# hexadecimal %a format isn't fully supported by cs2cs
+	# certain floats may cause problems (possibly length-dependent)
+	@pts = (
+		[ 5.634748, -3.666786 ],  # 0x1.689fb61p+2, -0x1.d5593e6p+1
+		[ 5.634740, -3.666780 ],  # 0x1.689f948p+2, -0x1.d5590c1p+1
+	);
+	lives_ok { $c = 0; $c = Geo::Proj5::cs2cs->new('EPSG:4326' => 'EPSG:3395', {-f=>'%.9g'}); } 'new cs2cs';
+	lives_ok { @p = 0; @p = $c->transform(@pts); } 'transform lives';
+	is_deeply \@p, [
+		[-408184.750, 624078.416, 0],
+		[-408184.082, 624077.527, 0],
+	], 'result valid' or diag 'possible cause: $FORMAT_IN="%a"';
 };
 
 

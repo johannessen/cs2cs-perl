@@ -23,9 +23,7 @@ eval {
 };
 
 # default stringification formats for cs2cs stdin and stdout
-# (%a is available since C++11; if PROJ's strtod() is too
-# old to understand it, try replacing it with %.15g)
-our $FORMAT_IN  = '%a';
+our $FORMAT_IN  = '%.15g';
 our $FORMAT_OUT = '%.12g';
 
 our %PARAMS = (
