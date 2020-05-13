@@ -18,9 +18,6 @@ version 4 (at time of this writing). However, this module is
 definitely less efficient and possibly also less robust with regards
 to potential changes to the `cs2cs` input/output format.
 
-**This software has pre-release quality.
-There is no schedule for further development.**
-
 [interprocess communication]: https://perldoc.perl.org/perlipc.html
 [`cs2cs`]: https://proj.org/apps/cs2cs.html
 [PROJ]: https://proj.org/
@@ -30,10 +27,17 @@ There is no schedule for further development.**
 Installation
 ------------
 
+Released versions of [Geo::LibProj::cs2cs][] may be installed via CPAN:
+
+	cpanm Geo::LibProj::cs2cs
+
+[![CPAN distribution](https://badge.fury.io/pl/Geo-LibProj-cs2cs.svg)](https://badge.fury.io/pl/Geo-LibProj-cs2cs)
+
 To install a development version from this repository, run the following steps:
 
  1. `git clone https://github.com/johannessen/cs2cs-perl && cd cs2cs-perl`
  1. `dzil build` (requires [Dist::Zilla][])
  1. `cpanm <archive>.tar.gz`
 
+[Geo::LibProj::cs2cs]: https://metacpan.org/release/Geo-LibProj-cs2cs
 [Dist::Zilla]: https://metacpan.org/release/Dist-Zilla

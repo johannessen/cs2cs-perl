@@ -234,9 +234,6 @@ S<version 4> (at time of this writing). However, this module is
 definitely less efficient and possibly also less robust with regards
 to potential changes to the C<cs2cs> input/output format.
 
-This software has pre-release quality.
-There is no schedule for further development.
-
 =head1 METHODS
 
 L<Geo::LibProj::cs2cs> implements the following methods.
