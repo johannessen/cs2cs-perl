@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package Geo::LibProj::cs2cs;
-# ABSTRACT: Perl IPC interface to PROJ cs2cs
+# ABSTRACT: IPC interface to PROJ cs2cs
 
 
 use Carp qw(croak);
@@ -203,7 +203,7 @@ __END__
  @points_utm = ([500_000, 6094_800], [504_760, 6093_880]);
  @points_geo = $cs2cs->transform( @points_geo );
  
- $params = {-r => 1};  # control parameter -r: reverse input coords
+ $params = {-r => ''};  # control parameter -r: reverse input coords
  $cs2cs = Geo::LibProj::cs2cs->new("EPSG:4326" => "EPSG:25833", $params);
  $point = $cs2cs->transform( [q(15d4'28"E), q(54d59'30"N)] );
  # result easting, northing: [504763.08827, 6093866.63099]
@@ -374,7 +374,7 @@ The C<cs2cs> binary is expected to be on the environment's C<PATH>.
 However, if L<Alien::proj> is available, its C<share> install will
 be preferred.
 
-If this doesn't suit you, can control the selection of the C<cs2cs>
+If this doesn't suit you, you can control the selection of the C<cs2cs>
 binary by modifying the value of C<@Geo::LibProj::cs2cs::PATH>. The
 directories listed will be tried in order, and the first match will
 be used. An explicit value of C<undef> in the list will cause the
@@ -403,7 +403,7 @@ The primary reason seems to be that each call to C<transform()>
 spawns a new C<cs2cs> process, which must run through complete
 PROJ initialisation each time. Additionally, this module could
 probably improve the interprocess communication overhead, but so
-far profiling suggest this is a minor problem by comparison.
+far profiling suggests this is a minor problem by comparison.
 
 Once C<transform()> is past that initialisation, it actually is
 reasonably fast. This means that what you need to do in order to get
@@ -456,7 +456,7 @@ format:
 The C<@points> list can be passed to C<transform()>. To re-insert
 the transformed coordinates into your original C<@records> data
 structure, you could iterate over both lists at the same time, as
-their length and order of elements should correspond to each other.
+their length and order of elements should correspond to one another.
 
 Alternatively, L<Geo::LibProj::cs2cs> allows for pass-through of Perl
 references in the fourth field of a point array, so you can use it to

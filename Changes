@@ -1,5 +1,9 @@
 Revision history for Geo::LibProj::cs2cs
 
+1.01  2020-05-13
+
+ - Fix broken tests
+
 1.00  2020-05-13
 
  - Change package name to Geo::LibProj::cs2cs to better reflect
