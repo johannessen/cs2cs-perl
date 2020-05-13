@@ -60,7 +60,7 @@ subtest 'transform pass-through simulation' => sub {
 	lives_ok { $p = 0; $p = $c->transform( \@p ); } 'transform dms lives';
 	is $p->[0], $p[0], 'transform x result';
 	is $p->[1], $p[1], 'transform y result';
-	is $p->[2], 'Inf', 'transform z result';
+	like $p->[2], qr/Inf/i, 'transform z result';
 	is ref($p->[3]), ref($p[3]), 'transform aux result';
 	
 	@pts = ([15, 55, 200], [15.0744, 54.9918, 0]);

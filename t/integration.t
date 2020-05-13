@@ -110,7 +110,7 @@ subtest 'problematic floats' => sub {
 		[ 5.634748, -3.666786 ],  # 0x1.689fb61p+2, -0x1.d5593e6p+1
 		[ 5.634740, -3.666780 ],  # 0x1.689f948p+2, -0x1.d5590c1p+1
 	);
-	lives_ok { $c = 0; $c = Geo::LibProj::cs2cs->new('EPSG:4326' => 'EPSG:3395', {-f=>'%.9g'}); } 'new cs2cs';
+	lives_ok { $c = 0; $c = Geo::LibProj::cs2cs->new('+init=epsg:4326' => '+init=epsg:3395', {-r=>'', -f=>'%.9g'}); } 'new cs2cs';
 	lives_ok { @p = 0; @p = $c->transform(@pts); } 'transform lives';
 	is_deeply \@p, [
 		[-408184.750, 624078.416, 0],

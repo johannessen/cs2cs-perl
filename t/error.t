@@ -33,7 +33,7 @@ subtest 'unsupported params' => sub {
 
 
 subtest 'transform usage' => sub {
-	plan tests => 5;
+	plan tests => 4;
 	@crs = ('+init=epsg:4326' => '+init=epsg:4326');
 	
 	lives_ok { $c = {}; $c = Geo::LibProj::cs2cs->new(@crs); } 'new cs2cs';
@@ -41,8 +41,6 @@ subtest 'transform usage' => sub {
 	$c->{call} = ['cat', '-'];
 	lives_ok { $p = 0; $p = $c->transform( [undef, undef, undef, undef] ); } 'undef transform lives';
 	is_deeply $p, [0, 0, 0], 'undef transform result';
-	
-	lives_ok { $c = 0; $c = Geo::LibProj::cs2cs->new(@crs, {-f=>'%.4e'}); } 'new cs2cs';
 	
 	throws_ok {
 		$c->transform( [undef, undef], [undef, undef] );
