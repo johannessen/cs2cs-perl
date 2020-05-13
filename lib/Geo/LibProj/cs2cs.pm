@@ -311,6 +311,10 @@ a single input point is given, C<transform()> may be called in scalar
 context to directly obtain a reference to the output point. For lists
 of multiple input points, calling in scalar context is prohibited.
 
+Each call to C<transform()> creates a new C<cs2cs> process and runs
+through the PROJ initialisation. Avoid calling this method in a loop.
+See L</"PERFORMANCE CONSIDERATIONS"> for details.
+
 =head2 version
 
  $version = Geo::LibProj::cs2cs->version;
@@ -391,6 +395,84 @@ L<cs2cs(1)|https://proj.org/apps/cs2cs.html> documentation.
 
 L<Geo::LibProj::cs2cs> dies as soon as any other error condition is
 discovered. Use C<eval>, L<Try::Tiny> or similar to catch this.
+
+=head1 PERFORMANCE CONSIDERATIONS
+
+The C<L<transform()|/"transform">> method has enormous overhead.
+Profiling shows the rate of C<transform()> calls you can expect to
+be of the order of maybe 20/s or so, depending on your system.
+
+The primary reason seems to be that each call to C<transform()>
+spawns a new C<cs2cs> process, which must run through complete
+PROJ initialisation each time. Additionally, this module could
+probably improve the interprocess communication overhead, but so
+far profiling suggest this is a minor problem by comparison.
+
+Once C<transform()> is past that initialisation, it actually is
+reasonably fast. This means that what you need to do in order to get
+good performance is simply to keep the number of C<transform()>
+calls in your code as low as possible. Obviously, it still won't be
+quite as fast as XS code such as L<Geo::Proj4>, but it will be fast
+enough that the difference likely won't matter to many applications.
+
+You should never be calling C<transform()> from within a loop that
+runs through all your coordinate pairs. That may be a typical pattern
+in existing code for L<Geo::Proj4>, but if you try that with
+L<Geo::LibProj::cs2cs>, it'll just take forever. (Well, almost.)
+
+ # Don't do this!
+ for my $p ( @thousands_of_points ) {
+   push @result, $cs2cs->transform( $p );
+ }
+
+Instead, gather your points in a single list, and pass that one big
+list to a single C<transform()> call.
+
+ # Do this:
+ @result = $cs2cs->transform( @thousands_of_points );
+
+Depending on your data structure, however, it may not be as simple
+as that. Imagine a structure looking like this, with coordinate
+pairs you need to transform into another CRS:
+
+ $r1 = bless {
+   some_data => { ... },
+   coords => { east => $e1, north => $n1 },
+ }, 'Record';
+ ...
+ @records = ( $r1, $r2, ... $rN );
+ #@result = $cs2cs->transform(@records);  # fails
+
+You can't simply pass C<@records> to C<transform()> because it has
+no way of knowing how to deal with C<Record> type objects. So, as a
+first step, you need to create a list containing points in the proper
+format:
+
+ @points = map { [
+   $_->{coords}->{east},   # x
+   $_->{coords}->{north},  # y
+   0,                      # z
+   $_,                     # backref - see below
+ ] } @records;
+ @result = $cs2cs->transform(@points);  # succeeds
+
+The C<@points> list can be passed to C<transform()>. To re-insert
+the transformed coordinates into your original C<@records> data
+structure, you could iterate over both lists at the same time, as
+their length and order of elements should correspond to each other.
+
+Alternatively, L<Geo::LibProj::cs2cs> allows for pass-through of Perl
+references in the fourth field of a point array, so you can use it to
+easily get back to the original C<Record> and insert the transformed
+coordinates as required:
+
+ for my $p ( @result ) {
+   my $record = $p->[3];   # get the backref
+   $record->{coords}->{lon} = $p->[0];
+   $record->{coords}->{lat} = $p->[1];
+ }
+
+=cut
 
 =head1 BUGS
 
