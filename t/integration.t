@@ -17,7 +17,7 @@ BEGIN {
 }
 
 
-use Test::More 0.96 tests => 6 + 1;
+use Test::More 0.96 tests => 7 + 1;
 use Test::Exception;
 use Test::Warnings;
 
@@ -71,6 +71,7 @@ subtest 'transform synopsis' => sub {
 
 
 subtest 'transform dms' => sub {
+	plan skip_all => 'test requires IPC' if $INC{'Geo/LibProj/FFI.pm'};
 	plan tests => 12;
 	@crs = ($epsg4326 => $epsg25833);
 	
@@ -103,6 +104,7 @@ subtest 'transform error' => sub {
 
 
 subtest 'child failure stderr' => sub {
+	plan skip_all => 'test requires IPC' if $INC{'Geo/LibProj/FFI.pm'};
 	plan tests => 3;
 	lives_ok { $c = {}; $c = Geo::LibProj::cs2cs->new(undef, undef); } 'new cs2cs';
 	$c->{call} = [ $c->{call}->[0], '-l-' ];
@@ -127,6 +129,19 @@ subtest 'problematic floats' => sub {
 		[-408184.750, 624078.416, 0],
 		[-408184.082, 624077.527, 0],
 	], 'result valid' or diag 'possible cause: $FORMAT_IN="%a"';
+};
+
+
+subtest 'ffi' => sub {
+	my $ffi = eval "require Geo::LibProj::FFI; 1";
+	plan skip_all => 'test requires FFI' unless $ffi && $INC{'Geo/LibProj/FFI.pm'};
+	plan tests => 5;
+	@crs = ($epsg4326 => $epsg25833);
+	lives_ok { $c = 0; $c = Geo::LibProj::cs2cs->new(@crs) } 'new cs2cs';
+	lives_and { ok $c->xs } 'xs mode';
+	lives_ok { $p = 0; $p = $c->transform( [12, 79] ) } 'transform lives';
+	like $p->[0], qr/^43612.\./, 'easting';
+	like $p->[1], qr/^877161.\./, 'northing';
 };
 
 
