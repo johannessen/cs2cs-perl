@@ -4,6 +4,7 @@ Revision history for Geo::LibProj::cs2cs
 
  - Fix a bug that prevented certain older PROJ versions from
    parsing legacy proj-strings with multiple parameters
+ - Skip some tests on Win32 that weren't designed for it
 
 1.02  2021-03-03
 
