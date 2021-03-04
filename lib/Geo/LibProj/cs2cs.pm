@@ -16,11 +16,13 @@ use IPC::Run3 qw(run3);
 
 our $CMD = 'cs2cs';
 our @PATH = ();
-eval {
-	require # optional module; try to hide from static analysers
-		Alien::proj;
-	unshift @PATH, File::Spec->catdir(Alien::proj->dist_dir, 'bin');
-};
+BEGIN {
+	# optional modules
+	eval "require Alien::proj" or eval "require Alien::Proj4";
+}
+eval { unshift @PATH, File::Spec->catdir(Alien::proj->dist_dir, 'bin') };
+eval { push @PATH, undef, File::Spec->catdir(Alien::Proj4->dist_dir, 'bin') };
+
 
 # default stringification formats for cs2cs stdin and stdout
 our $FORMAT_IN  = '%.15g';
