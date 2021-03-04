@@ -52,8 +52,10 @@ sub new {
 	for my $key (keys %$params) {
 		delete $params->{$key} unless defined $params->{$key};
 	}
+	my @source_crs = split m/ /, $source_crs // 'undef';
+	my @target_crs = split m/ /, $target_crs // 'undef';
 	$self->{cmd} = $self->_cmd();
-	$self->{call} = [$self->{cmd}, %$params, $source_crs, '+to', $target_crs, '-'];
+	$self->{call} = [$self->{cmd}, %$params, @source_crs, '+to', @target_crs, '-'];
 	
 	$self->_ffi_init($source_crs, $target_crs, $params);
 	
@@ -586,7 +588,7 @@ a truthy value, set to C<undef>, or is missing entirely.
 =item * No other control parameters are specified.
 
 =item * Both the source CRS and the target CRS given to the
-C<new()> method can be successfully interpreted by
+C<new()> method can be successfully interpreted as CRS by
 L<proj_create()|https://proj.org/development/reference/functions.html#c.proj_create>.
 
 =item * Creating a new PROJ threading context using
